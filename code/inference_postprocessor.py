@@ -16,14 +16,8 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder, StandardScaler, OrdinalEncoder
 from pickle import dump, load
+from sagemaker_containers.beta.framework import encoders, worker
 
-
-try:
-    from sagemaker_containers.beta.framework import encoders, worker
-except ImportError:
-    # We don't have access to the `worker` instance when testing locally. 
-    # We'll set it to None so we can change the way functions create a response.
-    worker = None
 
 
 def input_fn(input_data, content_type):
@@ -37,7 +31,7 @@ def input_fn(input_data, content_type):
 
 def output_fn(prediction, accept):
     if accept == "text/csv":
-        return worker.Response(encoders.encode(prediction, accept), mimetype=accept) if worker else (prediction, accept)
+        return worker.Response(encoders.encode(prediction, accept), mimetype=accept)
     
     if accept == "application/json":
         response = []
@@ -47,12 +41,11 @@ def output_fn(prediction, accept):
                 "confidence": c
             })
 
-        # If there's only one prediction, we'll return it
-        # as a single object.
+        # If there's only one prediction, we'll return it as a single object.
         if len(response) == 1:
             response = response[0]
             
-        return worker.Response(json.dumps(response), mimetype=accept) if worker else (response, accept)
+        return worker.Response(json.dumps(response), mimetype=accept)
     
     raise RuntimeException(f"{accept} accept type is not supported.")
 
