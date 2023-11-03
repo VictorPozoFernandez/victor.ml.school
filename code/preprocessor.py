@@ -1,15 +1,25 @@
+#| label: preprocessing-script
+#| echo: true
+#| output: false
+#| filename: preprocessor.py
+#| code-line-numbers: true
 
 import os
+import sys
+import argparse
+import json
 import tarfile
 import tempfile
+import time
 import joblib
 import numpy as np
 import pandas as pd
 
+from io import StringIO
 from pathlib import Path
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.impute import SimpleImputer
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, OrdinalEncoder
 
@@ -38,7 +48,7 @@ def preprocess(base_directory):
     features_transformer = ColumnTransformer(
         transformers=[
             ("numeric", numeric_transformer, make_column_selector(dtype_exclude="object")),
-            ("categorical", categorical_transformer, ["island", "sex"]),
+            ("categorical", categorical_transformer, ["island","sex"]),
         ]
     )
 
@@ -109,12 +119,7 @@ def _save_baselines(base_directory, df_train, df_test):
         # but not for the test baseline. We'll use the test baseline
         # to generate predictions later, and we can't have a header line
         # because the model won't be able to make a prediction for it.
-
-        if split == "train":
-            header = True
-        else:
-            header = False
-            
+        header = split == "train"
         df.to_csv(baseline_path / f"{split}-baseline.csv", header=header, index=False)
 
 
